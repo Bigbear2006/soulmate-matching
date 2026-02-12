@@ -1,0 +1,69 @@
+services:
+  backend-service:
+    build:
+      context: backend
+    volumes:
+      - ./backend:/app
+    env_file:
+      - .env
+    depends_on:
+      - redis
+      - db
+
+  redis:
+    image: redis:7
+    entrypoint:
+      - redis-server
+      - --appendonly
+      - "no"
+      - --requirepass
+      - ${REDIS_PASSWORD}
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./data/redis:/data
+    env_file:
+      - .env
+
+  db:
+    image: postgres:17.4
+    restart: always
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./data/db:/var/lib/postgresql/data
+    env_file:
+      - .env
+
+  django:
+    extends:
+      service: backend-service
+    restart: always
+    entrypoint: /app/entrypoint.sh
+    ports:
+      - "8000:8000"
+
+  bot:
+    extends:
+      service: backend-service
+    restart: always
+    command: python /app/main.py
+
+  celery:
+    extends:
+      service: backend-service
+    restart: always
+    command: celery -A backend worker -l info --logfile /app/logs/celery.log
+
+  nginx:
+    build:
+      context: nginx
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - ./backend/static:/var/www/static
+      - ./backend/media:/var/www/media
+    depends_on:
+      - django
