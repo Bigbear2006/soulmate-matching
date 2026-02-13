@@ -21,9 +21,7 @@ from bot.keyboards.registration import (
 from bot.loader import logger
 from bot.services.matching import find_match
 from bot.states import RegistrationState
-from bot.texts import (
-    lifestyles_bot_answers,
-)
+from bot.texts import lifestyles_bot_answers, territory_descriptions
 from bot.types import expect
 from core.choices import Lifestyle, QuestionKey, Territory
 from core.models import (
@@ -216,6 +214,7 @@ async def set_lifestyle_handler(
         await query.message.edit_text(
             f'{answer_text}\n\n'
             f'{Territory(first_territory).label}\n'
+            f'{territory_descriptions[first_territory]}\n\n'
             f'Что из этого тебе ближе?',
             reply_markup=await get_interests_kb(first_territory),
         )
@@ -267,6 +266,7 @@ async def set_interest_query_handler(
     await state.set_data(data)
     await query.message.edit_text(
         f'{Territory(current_territory).label}\n'
+        f'{territory_descriptions[current_territory]}\n\n'
         f'Что из этого тебе ближе?\n\n'
         f'Ты выбрал:\n{interests_text}',
         reply_markup=await get_interests_kb(current_territory),
@@ -383,7 +383,6 @@ async def career_focus_direction_done_handler(
 ) -> None:
     questions_ids = await Question.objects.get_ids_for_keys(
         [
-            QuestionKey.MONEY_HABITS,
             QuestionKey.COMPANY_ROLE,
             QuestionKey.WHY_FUN_TO_BE_WITH,
             QuestionKey.INTERESTING_TO_TALK_WITH,
@@ -452,14 +451,16 @@ async def set_workday_type_handler(
     workday_type = query.data.split(':')[1]
     data = await state.get_data()
 
-    profile = await Profile.objects.acreate(
+    profile, _ = await Profile.objects.aupdate_or_create(
+        {
+            'name': data['name'],
+            'gender': data['gender'],
+            'city_id': data['city_id'],
+            'department_id': data['department_id'],
+            'search_type': data['search_type'],
+            'workday_type': workday_type,
+        },
         user=user,
-        name=data['name'],
-        gender=data['gender'],
-        city_id=data['city_id'],
-        department_id=data['department_id'],
-        search_type=data['search_type'],
-        workday_type=workday_type,
     )
     await ProfileLifestyle.objects.abulk_create(
         [
