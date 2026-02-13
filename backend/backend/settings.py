@@ -180,12 +180,12 @@ LOGGING = {
     },
     'loggers': {
         'bot': {
-            'handlers': ['console'],
+            'handlers': ['console', 'bot_file'],
             'level': 'INFO',
             'propagate': False,
         },
         'django': {
-            'handlers': ['console'],
+            'handlers': ['console', 'django_file'],
             'level': 'INFO',
             'propagate': False,
         },

@@ -6,7 +6,7 @@ from core.models import (
     Match,
     Profile,
     ProfileAnswer,
-    User, ProfileLifestyle,
+    User, ProfileLifestyle, Question, Answer,
 )
 
 admin.site.unregister(Group)
@@ -17,12 +17,14 @@ class UserAdmin(admin.ModelAdmin[User]):
     search_fields = ('first_name', 'last_name', 'username')
     readonly_fields = ('created_at',)
     ordering = ('-created_at',)
+    group = 'Основное'
 
 
 @admin.register(Match)
 class MatchAdmin(admin.ModelAdmin[Match]):
     list_display = ('initiator', 'recipient', 'created_at')
     ordering = ('-created_at',)
+    group = 'Основное'
 
 
 class ProfileAnswerInline(admin.TabularInline[ProfileAnswer, Profile]):
@@ -43,6 +45,7 @@ class ProfileAdmin(admin.ModelAdmin[Profile]):
     readonly_fields = ('user', 'created_at')
     inlines = (ProfileAnswerInline, ProfileLifestyleInline)
     ordering = ('-created_at',)
+    group = 'Основное'
 
 
 @admin.register(ContactsExchangeRequest)
@@ -51,6 +54,7 @@ class ContactsExchangeRequestAdmin(admin.ModelAdmin[ContactsExchangeRequest]):
     list_display = ('user_1', 'user_2', 'status', 'created_at')
     list_filter = ('status',)
     ordering = ('-created_at',)
+    group = 'Основное'
 
     @admin.display(description='Пользователь 1')
     def user_1(self, obj: ContactsExchangeRequest) -> str:
@@ -59,3 +63,15 @@ class ContactsExchangeRequestAdmin(admin.ModelAdmin[ContactsExchangeRequest]):
     @admin.display(description='Пользователь 2')
     def user_2(self, obj: ContactsExchangeRequest) -> str:
         return str(obj.match.recipient)
+
+
+class AnswerInline(admin.StackedInline[Answer, Question]):
+    model = Answer
+
+
+@admin.register(Question)
+class QuestionAdmin(admin.ModelAdmin[Question]):
+    exclude = ('key',)
+    inlines = (AnswerInline,)
+    ordering = ('order',)
+    group = 'Вопросы и ответы'
