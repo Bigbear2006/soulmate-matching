@@ -7,6 +7,7 @@ from core.models import (
     Match,
     Profile,
     ProfileAnswer,
+    ProfileInterest,
     ProfileLifestyle,
     Question,
     User,
@@ -42,11 +43,21 @@ class ProfileLifestyleInline(admin.TabularInline[ProfileLifestyle, Profile]):
     extra = 0
 
 
+class ProfileInterestInline(admin.TabularInline[ProfileInterest, Profile]):
+    model = ProfileInterest
+    readonly_fields = ('interest',)
+    extra = 0
+
+
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin[Profile]):
     list_select_related = ('user',)
     readonly_fields = ('user', 'created_at')
-    inlines = (ProfileAnswerInline, ProfileLifestyleInline)
+    inlines = (
+        ProfileAnswerInline,
+        ProfileLifestyleInline,
+        ProfileInterestInline,
+    )
     ordering = ('-created_at',)
     group = 'Основное'
 

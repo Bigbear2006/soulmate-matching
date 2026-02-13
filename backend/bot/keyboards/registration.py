@@ -9,7 +9,6 @@ from core.choices import (
     CareerFocus,
     Gender,
     Lifestyle,
-    MatchType,
     SearchType,
     Territory,
     WorkdayType,
@@ -60,10 +59,14 @@ def get_territories_kb() -> InlineKeyboardMarkup:
 
 
 async def get_interests_kb(territory: Territory | str) -> InlineKeyboardMarkup:
-    return await keyboard_from_queryset(
-        Interest.objects.filter(territory=territory),
-        pack_action_data('interest', 'select'),
+    kb = InlineKeyboardBuilder.from_markup(
+        await keyboard_from_queryset(
+            Interest.objects.filter(territory=territory),
+            pack_action_data('interest', 'select'),
+        ),
     )
+    kb.row(InlineKeyboardButton(text='Готово', callback_data='interest:done'))
+    return kb.as_markup()
 
 
 def get_career_focuses_kb() -> InlineKeyboardMarkup:
@@ -80,29 +83,38 @@ async def get_career_focus_directions_kb(
 
 
 def get_answers_kb(answers: QuerySet[Answer]) -> InlineKeyboardMarkup:
+    kb = InlineKeyboardBuilder()
+    kb.add(
+        *[
+            InlineKeyboardButton(
+                text=answer.text,
+                callback_data=pack_action_data(
+                    'answer',
+                    'select',
+                    answer.pk,
+                ),
+            )
+            for answer in answers
+        ],
+    )
+    kb.button(text='Готово', callback_data='answer:done')
+    kb.adjust(1)
+    return kb.as_markup()
+
+
+def get_yes_no_kb() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                InlineKeyboardButton(
-                    text=answer.text,
-                    callback_data=pack_action_data(
-                        'answer',
-                        'select',
-                        answer.pk,
-                    ),
-                ),
-            ]
-            for answer in answers
+                InlineKeyboardButton(text='Да', callback_data='answer:yes'),
+                InlineKeyboardButton(text='Нет', callback_data='answer:no'),
+            ],
         ],
     )
 
 
 def get_search_types_kb() -> InlineKeyboardMarkup:
     return keyboard_from_choices(SearchType, prefix='search_type')
-
-
-def get_match_types_kb() -> InlineKeyboardMarkup:
-    return keyboard_from_choices(MatchType, prefix='match_type')
 
 
 def get_workday_types_kb() -> InlineKeyboardMarkup:

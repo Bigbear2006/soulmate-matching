@@ -1,6 +1,6 @@
 from django.db import models
 
-from core.choices import QuestionKey
+from core.choices import QuestionKey, QuestionType
 from core.managers import QuestionManager
 
 
@@ -14,6 +14,12 @@ class Question(models.Model):
     text = models.TextField('Текст')
     bot_response = models.TextField('Ответ бота', blank=True)
     order = models.PositiveIntegerField('Номер', default=1)
+    type = models.CharField(
+        'Тип',
+        choices=QuestionType,
+        max_length=20,
+        default=QuestionType.MULTI_SELECT,
+    )
     objects = QuestionManager()
 
     class Meta:

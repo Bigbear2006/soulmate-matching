@@ -1,4 +1,4 @@
-from aiogram import Router
+from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery
 
@@ -7,8 +7,9 @@ from bot.filters import action_filter
 from bot.keyboards.registration import (
     get_answers_kb,
     get_lifestyles_kb,
-    get_match_types_kb,
     get_search_types_kb,
+    get_workday_types_kb,
+    get_yes_no_kb,
 )
 from bot.states import RegistrationState
 from core.models import Answer, Question
@@ -23,23 +24,49 @@ async def select_answer_handler(
     callback_data: IntDetailActionCallback,
 ) -> None:
     data = await state.get_data()
-
     current_question_index = data.get('current_question_index', 0)
-    current_question_index += 1
+    questions_ids = data.get('questions_ids', [])
+
+    answers_ids = data.get('answers_ids', [])
+    if callback_data.pk in answers_ids:
+        answers_ids.remove(callback_data.pk)
+    else:
+        answers_ids.append(callback_data.pk)
+
+    data['answers_ids'] = answers_ids
+    await state.set_data(data)
+
+    question = await Question.objects.prefetch_related('answers').aget(
+        pk=questions_ids[current_question_index],
+    )
+    answers = '\n'.join(
+        [
+            a.text
+            async for a in Answer.objects.filter(
+                pk__in=answers_ids,
+                question=question,
+            )
+        ],
+    )
+
+    await query.message.edit_text(
+        f'{question.text}\n\nТы выбрал:\n{answers}',
+        reply_markup=get_answers_kb(question.answers.all()),
+    )
+
+
+@router.callback_query(F.data == 'answer:done')
+async def answer_done_handler(
+    query: CallbackQuery,
+    state: FSMContext,
+) -> None:
+    data = await state.get_data()
+    current_question_index = data.get('current_question_index', 0) + 1
     questions_ids = data.get('questions_ids', [])
     next_question_function_key = data['next_question_function_key']
 
-    answers_ids = data.get('answers_ids', [])
-    answers_ids.append(callback_data.pk)
-
-    data['answers_ids'] = answers_ids
     data['current_question_index'] = current_question_index
     await state.set_data(data)
-
-    answer = await Answer.objects.select_related('question').aget(
-        pk=callback_data.pk,
-    )
-    bot_response = answer.bot_response or answer.question.bot_response
 
     if current_question_index >= len(questions_ids):
         next_question_func = _questions_handlers[next_question_function_key]
@@ -49,12 +76,41 @@ async def select_answer_handler(
     question = await Question.objects.prefetch_related('answers').aget(
         pk=questions_ids[current_question_index],
     )
-    text = (
-        f'{bot_response}\n\n{question.text}' if bot_response else question.text
-    )
     await query.message.edit_text(
-        text,
+        question.text,
         reply_markup=get_answers_kb(question.answers.all()),
+    )
+
+
+@router.callback_query(F.data.in_(('answer:yes', 'answer:no')))
+async def answer_yes_no_handler(
+    query: CallbackQuery,
+    state: FSMContext,
+) -> None:
+    yes = query.data.split(':')[1] == 'yes'
+
+    data = await state.get_data()
+    current_answer_id = data['current_answer_id']
+    answers_ids = data.get('answers_ids', [])
+
+    if yes and current_answer_id not in answers_ids:
+        answers_ids.append(current_answer_id)
+
+    current_yes_no_answers_ids = data.get('current_yes_no_answers_ids', [])
+    if not current_yes_no_answers_ids:
+        await answer_done_handler(query, state)
+        return
+
+    current_answer = await Answer.objects.select_related('question').aget(
+        pk=current_yes_no_answers_ids.pop(0),
+    )
+    data['current_answer_id'] = current_answer.pk
+    data['current_yes_no_answers_ids'] = current_yes_no_answers_ids
+    data['answers_ids'] = answers_ids
+    await state.set_data(data)
+    await query.message.edit_text(
+        f'{current_answer.question.text}\n\n{current_answer.text}',
+        reply_markup=get_yes_no_kb(),
     )
 
 
@@ -66,11 +122,13 @@ async def ask_search_type(query: CallbackQuery, state: FSMContext) -> None:
     )
 
 
-async def ask_match_type(query: CallbackQuery, state: FSMContext) -> None:
-    await state.set_state(RegistrationState.match_type)
+async def ask_workday_type(query: CallbackQuery, state: FSMContext) -> None:
+    await state.set_state(RegistrationState.workday_type)
     await query.message.edit_text(
-        'Твой идеальный мэтч — это',
-        reply_markup=get_match_types_kb(),
+        'Координаты заданы. Иду искать совпадение.\n\n'
+        'И последний штрих! Чтобы общение было максимально комфортным, '
+        'расскажи, где проходит твой рабочий день?',
+        reply_markup=get_workday_types_kb(),
     )
 
 
@@ -84,6 +142,6 @@ async def ask_lifestyle(query: CallbackQuery, state: FSMContext) -> None:
 
 _questions_handlers = {
     'ask_search_type': ask_search_type,
-    'ask_match_type': ask_match_type,
+    'ask_workday_type': ask_workday_type,
     'ask_lifestyle': ask_lifestyle,
 }

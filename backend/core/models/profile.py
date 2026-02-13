@@ -4,7 +4,6 @@ from core.choices import (
     CareerFocus,
     Gender,
     Lifestyle,
-    MatchType,
     SearchType,
     Territory,
     WorkdayType,
@@ -33,12 +32,6 @@ class Profile(models.Model):
         related_name='profiles',
         verbose_name='Департамент',
     )
-    interest = models.ForeignKey(
-        'core.Interest',
-        on_delete=models.CASCADE,
-        related_name='profiles',
-        verbose_name='Интерес',
-    )
     career_focus_direction = models.ForeignKey(
         'core.CareerFocusDirection',
         on_delete=models.CASCADE,
@@ -48,11 +41,6 @@ class Profile(models.Model):
     search_type = models.CharField(
         'Кого ищет',
         choices=SearchType,
-        max_length=20,
-    )
-    match_type = models.CharField(
-        'Идеальный мэтч',
-        choices=MatchType,
         max_length=20,
     )
     workday_type = models.CharField(
@@ -90,6 +78,29 @@ class ProfileLifestyle(models.Model):
 
     def __str__(self) -> str:
         return f'Способ пережить сложный день ({self.pk})'
+
+
+class ProfileInterest(models.Model):
+    profile = models.ForeignKey(
+        'core.Profile',
+        on_delete=models.CASCADE,
+        related_name='interests',
+        verbose_name='Профиль',
+    )
+    interest = models.ForeignKey(
+        'core.Interest',
+        on_delete=models.CASCADE,
+        related_name='profiles',
+        verbose_name='Интерес',
+    )
+
+    class Meta:
+        unique_together = ('profile', 'interest')
+        verbose_name = 'Выбранный интерес'
+        verbose_name_plural = 'Выбранные интересы'
+
+    def __str__(self) -> str:
+        return f'Выбранный интерес ({self.pk})'
 
 
 class City(models.Model):

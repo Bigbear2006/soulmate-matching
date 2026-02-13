@@ -17,8 +17,7 @@ from bot.keyboards.registration import (
     get_genders_kb,
     get_interests_kb,
     get_lifestyles_kb,
-    get_territories_kb,
-    get_workday_types_kb,
+    get_yes_no_kb,
 )
 from bot.loader import logger
 from bot.services.matching import find_match
@@ -27,11 +26,9 @@ from bot.texts import (
     career_focus_bot_answers,
     career_focuses_text,
     lifestyles_bot_answers,
-    territories_text,
-    territory_bot_answers,
 )
 from bot.types import expect
-from core.choices import Lifestyle, QuestionKey
+from core.choices import Lifestyle, QuestionKey, Territory
 from core.models import (
     CareerFocusDirection,
     City,
@@ -40,6 +37,7 @@ from core.models import (
     Match,
     Profile,
     ProfileAnswer,
+    ProfileInterest,
     ProfileLifestyle,
     Question,
     User,
@@ -83,7 +81,7 @@ async def start_matching_handler(
     await state.set_state(RegistrationState.name)
     await query.message.edit_text(
         'Напиши имя или ник, его будут видеть пользователи, '
-        'с которыми будет мэтч'
+        'с которыми будет мэтч',
     )
 
 
@@ -164,20 +162,28 @@ async def set_department_handler(
 ) -> None:
     department = await Department.objects.aget(pk=callback_data.pk)
     question_key = QuestionKey.EVENING_MOVIE
+    question = await Question.objects.prefetch_related('answers').aget(
+        key=question_key,
+    )
+
+    answer = question.answers.all()[0]
+    yes_no_answers_ids = [a.pk for a in question.answers.all()]
+    yes_no_answers_ids.pop(0)
+
     await state.update_data(
         department_id=department.pk,
         questions_ids=await Question.objects.get_ids_for_keys([question_key]),
         current_question_index=0,
         next_question_function_key='ask_lifestyle',
+        current_answer_id=answer.pk,
+        current_yes_no_answers_ids=yes_no_answers_ids,
     )
+
     await state.set_state(RegistrationState.questions)
-    question = await Question.objects.prefetch_related('answers').aget(
-        key=question_key,
-    )
     await query.message.edit_text(
         f'Отлично. Значит, возможны совпадения прямо за соседним столом.\n\n'
-        f'{question.text}',
-        reply_markup=get_answers_kb(question.answers.all()),
+        f'{question.text}\n\n{answer.text}',
+        reply_markup=get_yes_no_kb(),
     )
 
 
@@ -201,12 +207,19 @@ async def set_lifestyle_handler(
             await query.answer('Надо выбрать хотя бы одно', show_alert=True)
             return
 
-        await state.set_state(RegistrationState.territory)
+        territories = list(Territory.values)
+        first_territory = territories.pop(0)
+        await state.update_data(
+            territories=territories,
+            current_territory=first_territory,
+        )
+        await state.set_state(RegistrationState.interest)
         answer_text = lifestyles_bot_answers.get(frozenset(lifestyles))
         await query.message.edit_text(
-            f'{answer_text}\n\nГде ты чувствуешь себя «своим»?\n\n'
-            f'{territories_text}',
-            reply_markup=get_territories_kb(),
+            f'{answer_text}\n\n'
+            f'{Territory(first_territory).label}\n'
+            f'Что из этого тебе ближе?',
+            reply_markup=await get_interests_kb(first_territory),
         )
         return
 
@@ -224,24 +237,6 @@ async def set_lifestyle_handler(
 
 
 @router.callback_query(
-    F.data.startswith('territory'),
-    StateFilter(RegistrationState.territory),
-)
-async def set_territory_handler(
-    query: CallbackQuery,
-    state: FSMContext,
-) -> None:
-    territory = query.data.split(':')[1]
-    await state.update_data(territory=territory)
-    await state.set_state(RegistrationState.interest)
-    answer_text = territory_bot_answers[territory]
-    await query.message.edit_text(
-        answer_text,
-        reply_markup=await get_interests_kb(territory),
-    )
-
-
-@router.callback_query(
     action_filter('interest', 'select', detail=True),
     StateFilter(RegistrationState.interest),
 )
@@ -250,12 +245,59 @@ async def set_interest_query_handler(
     state: FSMContext,
     callback_data: IntDetailActionCallback,
 ) -> None:
+    data = await state.get_data()
+    current_territory = data['current_territory']
+    interests_ids = data.get('interests_ids', [])
+
     interest = await Interest.objects.aget(pk=callback_data.pk)
-    await state.update_data(interest_id=interest.pk)
-    await state.set_state(RegistrationState.career_focus)
+    if interest.pk in interests_ids:
+        interests_ids.remove(interest.pk)
+    else:
+        interests_ids.append(interest.pk)
+    data['interests_ids'] = interests_ids
+
+    interests_text = '\n'.join(
+        [
+            str(i)
+            async for i in Interest.objects.filter(
+                pk__in=interests_ids,
+                territory=current_territory,
+            )
+        ],
+    )
+
+    await state.set_data(data)
     await query.message.edit_text(
-        career_focuses_text,
-        reply_markup=get_career_focuses_kb(),
+        f'{Territory(current_territory).label}\n'
+        f'Что из этого тебе ближе?\n\n'
+        f'Ты выбрал:\n{interests_text}',
+        reply_markup=await get_interests_kb(current_territory),
+    )
+
+
+@router.callback_query(F.data == 'interest:done')
+async def interest_done_handler(
+    query: CallbackQuery,
+    state: FSMContext,
+) -> None:
+    data = await state.get_data()
+    territories = data['territories']
+
+    if not territories:
+        await state.set_state(RegistrationState.career_focus)
+        await query.message.edit_text(
+            career_focuses_text,
+            reply_markup=get_career_focuses_kb(),
+        )
+        return
+
+    territory = territories.pop(0)
+    data['territories'] = territories
+    data['current_territory'] = territory
+    await state.set_data(data)
+    await query.message.edit_text(
+        f'{Territory(territory).label}\nЧто из этого тебе ближе?\n\n',
+        reply_markup=await get_interests_kb(territory),
     )
 
 
@@ -265,11 +307,12 @@ async def set_interest_message_handler(
     state: FSMContext,
 ) -> None:
     interest, _ = await Interest.objects.aget_or_create(name=msg.text)
-    await state.update_data(interest_id=interest.pk)
-    await state.set_state(RegistrationState.career_focus)
+    data = await state.get_data()
+    interests_ids = data.get('interests_ids', [])
+    interests_ids.append(interest.pk)
     await msg.answer(
-        career_focuses_text,
-        reply_markup=get_career_focuses_kb(),
+        f'"{interest}" добавлено\n\n'
+        f'Нажми готово, чтобы перейти к следующему шагу',
     )
 
 
@@ -306,8 +349,8 @@ async def set_career_focus_direction_handler(
 
     questions_ids = await Question.objects.get_ids_for_keys(
         [
-            QuestionKey.MONEY_HABITS,
             QuestionKey.SHARE_SKILL_CARD,
+            QuestionKey.MONEY_HABITS,
             QuestionKey.COMPANY_ROLE,
             QuestionKey.WHY_FUN_TO_BE_WITH,
             QuestionKey.INTERESTING_TO_TALK_WITH,
@@ -318,16 +361,22 @@ async def set_career_focus_direction_handler(
         pk=questions_ids[0],
     )
 
+    answer = question.answers.all()[0]
+    yes_no_answers_ids = [a.pk for a in question.answers.all()]
+    yes_no_answers_ids.pop(0)
+
     await state.update_data(
         career_focus_direction_id=career_focus_direction.pk,
         questions_ids=questions_ids,
         current_question_index=0,
         next_question_function_key='ask_search_type',
+        current_answer_id=answer.pk,
+        current_yes_no_answers_ids=yes_no_answers_ids,
     )
     await state.set_state(RegistrationState.questions)
     await query.message.edit_text(
-        question.text,
-        reply_markup=get_answers_kb(question.answers.all()),
+        f'{question.text}\n\n{answer.text}',
+        reply_markup=get_yes_no_kb(),
     )
 
 
@@ -345,7 +394,7 @@ async def set_search_type_handler(
         search_type=search_type,
         questions_ids=await Question.objects.get_ids_for_keys([question_key]),
         current_question_index=0,
-        next_question_function_key='ask_match_type',
+        next_question_function_key='ask_workday_type',
     )
     await state.set_state(RegistrationState.questions)
     question = await Question.objects.prefetch_related('answers').aget(
@@ -354,25 +403,6 @@ async def set_search_type_handler(
     await query.message.edit_text(
         f'Хм, интересный запрос. Записываю приоритеты.\n\n{question.text}',
         reply_markup=get_answers_kb(question.answers.all()),
-    )
-
-
-@router.callback_query(
-    F.data.startswith('match_type'),
-    StateFilter(RegistrationState.match_type),
-)
-async def set_match_type_handler(
-    query: CallbackQuery,
-    state: FSMContext,
-) -> None:
-    match_type = query.data.split(':')[1]
-    await state.update_data(match_type=match_type)
-    await state.set_state(RegistrationState.workday_type)
-    await query.message.edit_text(
-        'Координаты заданы. Иду искать совпадение.\n\n'
-        'И последний штрих! Чтобы общение было максимально комфортным, '
-        'расскажи, где проходит твой рабочий день?',
-        reply_markup=get_workday_types_kb(),
     )
 
 
@@ -395,16 +425,21 @@ async def set_workday_type_handler(
         gender=data['gender'],
         city_id=data['city_id'],
         department_id=data['department_id'],
-        interest_id=data['interest_id'],
         career_focus_direction_id=data['career_focus_direction_id'],
         search_type=data['search_type'],
-        match_type=data['match_type'],
         workday_type=workday_type,
     )
     await ProfileLifestyle.objects.abulk_create(
         [
             ProfileLifestyle(profile=profile, lifestyle=lifestyle)
             for lifestyle in data['lifestyles']
+        ],
+        ignore_conflicts=True,
+    )
+    await ProfileInterest.objects.abulk_create(
+        [
+            ProfileInterest(profile=profile, interest_id=interest)
+            for interest in data['interests_ids']
         ],
         ignore_conflicts=True,
     )

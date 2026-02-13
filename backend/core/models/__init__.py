@@ -6,6 +6,7 @@ from core.models.profile import (
     Department,
     Interest,
     Profile,
+    ProfileInterest,
     ProfileLifestyle,
 )
 from core.models.question import Answer, ProfileAnswer, Question
@@ -21,6 +22,7 @@ __all__ = (
     'Match',
     'Profile',
     'ProfileAnswer',
+    'ProfileInterest',
     'ProfileLifestyle',
     'Question',
     'User',

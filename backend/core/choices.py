@@ -36,11 +36,6 @@ class SearchType(TextChoices):
     INTERESTS = 'interests', 'По схожим интересам'
 
 
-class MatchType(TextChoices):
-    MY_CITY = 'my_city', 'Мой город'
-    OTHER_CITY = 'other_city', 'Другой регион'
-
-
 class WorkdayType(TextChoices):
     OFFICE = 'office', 'В офисе (люблю деловой ритм и личные встречи)'
     DEPARTMENT = 'branch', 'В отделении (я там, где наши клиенты)'
@@ -57,6 +52,12 @@ class QuestionKey(TextChoices):
     WHY_FUN_TO_BE_WITH = 'why_fun_to_be_with', 'Со мной классно, потому что'
     INTERESTING_TO_TALK_WITH = 'interesting_to_talk_with'
     WHY_HERE = 'why_here', 'Здесь ради'
+
+
+class QuestionType(TextChoices):
+    SELECT = 'select', 'Выбор одного варианта'
+    MULTI_SELECT = 'multi_select', 'Выбор нескольких вариантов'
+    YES_NO = 'yes_no', 'Да/Нет'
 
 
 class MatchStatus(TextChoices):

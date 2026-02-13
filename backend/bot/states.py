@@ -7,7 +7,6 @@ class RegistrationState(StatesGroup):
     city = State()
     department = State()
     lifestyle = State()
-    territory = State()
     interest = State()
     career_focus = State()
     career_focus_direction = State()
