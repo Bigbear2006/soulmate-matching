@@ -8,7 +8,6 @@ class RegistrationState(StatesGroup):
     department = State()
     lifestyle = State()
     interest = State()
-    career_focus = State()
     career_focus_direction = State()
     search_type = State()
     match_type = State()

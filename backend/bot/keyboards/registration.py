@@ -73,13 +73,20 @@ def get_career_focuses_kb() -> InlineKeyboardMarkup:
     return keyboard_from_choices(CareerFocus, prefix='career_focus')
 
 
-async def get_career_focus_directions_kb(
-    career_focus: CareerFocus | str,
-) -> InlineKeyboardMarkup:
-    return await keyboard_from_queryset(
-        CareerFocusDirection.objects.filter(career_focus=career_focus),
-        prefix=pack_action_data('career_focus_direction', 'select'),
+async def get_career_focus_directions_kb() -> InlineKeyboardMarkup:
+    kb = InlineKeyboardBuilder.from_markup(
+        await keyboard_from_queryset(
+            CareerFocusDirection.objects.all(),
+            prefix=pack_action_data('career_focus_direction', 'select'),
+        ),
     )
+    kb.row(
+        InlineKeyboardButton(
+            text='Готово',
+            callback_data='career_focus_direction:done',
+        ),
+    )
+    return kb.as_markup()
 
 
 def get_answers_kb(answers: QuerySet[Answer]) -> InlineKeyboardMarkup:

@@ -11,7 +11,6 @@ from bot.keyboards.matching import start_matching_kb
 from bot.keyboards.registration import (
     get_answers_kb,
     get_career_focus_directions_kb,
-    get_career_focuses_kb,
     get_cities_kb,
     get_departments_kb,
     get_genders_kb,
@@ -23,8 +22,6 @@ from bot.loader import logger
 from bot.services.matching import find_match
 from bot.states import RegistrationState
 from bot.texts import (
-    career_focus_bot_answers,
-    career_focuses_text,
     lifestyles_bot_answers,
 )
 from bot.types import expect
@@ -37,6 +34,7 @@ from core.models import (
     Match,
     Profile,
     ProfileAnswer,
+    ProfileCareerFocusDirection,
     ProfileInterest,
     ProfileLifestyle,
     Question,
@@ -284,10 +282,11 @@ async def interest_done_handler(
     territories = data['territories']
 
     if not territories:
-        await state.set_state(RegistrationState.career_focus)
+        await state.set_state(RegistrationState.career_focus_direction)
         await query.message.edit_text(
-            career_focuses_text,
-            reply_markup=get_career_focuses_kb(),
+            'Когда ценности совпадают, работа превращается в драйв. '
+            'Выбери, какие ближе всего тебе',
+            reply_markup=await get_career_focus_directions_kb(),
         )
         return
 
@@ -308,8 +307,12 @@ async def set_interest_message_handler(
 ) -> None:
     interest, _ = await Interest.objects.aget_or_create(name=msg.text)
     data = await state.get_data()
+
     interests_ids = data.get('interests_ids', [])
     interests_ids.append(interest.pk)
+    data['interests_ids'] = interests_ids
+
+    await state.set_data(data)
     await msg.answer(
         f'"{interest}" добавлено\n\n'
         f'Нажми готово, чтобы перейти к следующему шагу',
@@ -317,39 +320,69 @@ async def set_interest_message_handler(
 
 
 @router.callback_query(
-    F.data.startswith('career_focus'),
-    StateFilter(RegistrationState.career_focus),
-)
-async def set_career_focus_handler(
-    query: CallbackQuery,
-    state: FSMContext,
-) -> None:
-    career_focus = query.data.split(':')[1]
-    await state.update_data(career_focus=career_focus)
-    await state.set_state(RegistrationState.career_focus_direction)
-    answer_text = career_focus_bot_answers[career_focus]
-    await query.message.edit_text(
-        answer_text,
-        reply_markup=await get_career_focus_directions_kb(career_focus),
-    )
-
-
-@router.callback_query(
     action_filter('career_focus_direction', 'select', detail=True),
     StateFilter(RegistrationState.career_focus_direction),
 )
-async def set_career_focus_direction_handler(
+async def set_career_focus_direction_query_handler(
     query: CallbackQuery,
     state: FSMContext,
     callback_data: IntDetailActionCallback,
 ) -> None:
-    career_focus_direction = await CareerFocusDirection.objects.aget(
-        pk=callback_data.pk,
+    data = await state.get_data()
+    career_focus_direction_ids = data.get('career_focus_direction_ids', [])
+
+    direction = await CareerFocusDirection.objects.aget(pk=callback_data.pk)
+    if direction.pk in career_focus_direction_ids:
+        career_focus_direction_ids.remove(direction.pk)
+    else:
+        career_focus_direction_ids.append(direction.pk)
+    data['career_focus_direction_ids'] = career_focus_direction_ids
+
+    directions_text = '\n'.join(
+        [
+            str(i)
+            async for i in CareerFocusDirection.objects.filter(
+                pk__in=career_focus_direction_ids,
+            )
+        ],
     )
 
+    await state.set_data(data)
+    await query.message.edit_text(
+        'Когда ценности совпадают, работа превращается в драйв. '
+        f'Выбери, какие ближе всего тебе\n\n{directions_text}',
+        reply_markup=await get_career_focus_directions_kb(),
+    )
+
+
+@router.message(F.text, StateFilter(RegistrationState.career_focus_direction))
+async def set_career_focus_direction_message_handler(
+    msg: Message,
+    state: FSMContext,
+) -> None:
+    direction, _ = await CareerFocusDirection.objects.aget_or_create(
+        name=msg.text,
+    )
+    data = await state.get_data()
+
+    career_focus_direction_ids = data.get('career_focus_direction_ids', [])
+    career_focus_direction_ids.append(direction.pk)
+    data['career_focus_direction_ids'] = career_focus_direction_ids
+
+    await state.set_data(data)
+    await msg.answer(
+        f'"{direction}" добавлено\n\n'
+        f'Нажми готово, чтобы перейти к следующему шагу',
+    )
+
+
+@router.callback_query(F.data == 'career_focus_direction:done')
+async def career_focus_direction_done_handler(
+    query: CallbackQuery,
+    state: FSMContext,
+) -> None:
     questions_ids = await Question.objects.get_ids_for_keys(
         [
-            QuestionKey.SHARE_SKILL_CARD,
             QuestionKey.MONEY_HABITS,
             QuestionKey.COMPANY_ROLE,
             QuestionKey.WHY_FUN_TO_BE_WITH,
@@ -358,15 +391,15 @@ async def set_career_focus_direction_handler(
         ],
     )
     question = await Question.objects.prefetch_related('answers').aget(
-        pk=questions_ids[0],
+        key=QuestionKey.SHARE_SKILL_CARD,
     )
+    questions_ids.insert(0, question.pk)
 
     answer = question.answers.all()[0]
     yes_no_answers_ids = [a.pk for a in question.answers.all()]
     yes_no_answers_ids.pop(0)
 
     await state.update_data(
-        career_focus_direction_id=career_focus_direction.pk,
         questions_ids=questions_ids,
         current_question_index=0,
         next_question_function_key='ask_search_type',
@@ -425,7 +458,6 @@ async def set_workday_type_handler(
         gender=data['gender'],
         city_id=data['city_id'],
         department_id=data['department_id'],
-        career_focus_direction_id=data['career_focus_direction_id'],
         search_type=data['search_type'],
         workday_type=workday_type,
     )
@@ -443,6 +475,16 @@ async def set_workday_type_handler(
         ],
         ignore_conflicts=True,
     )
+    await ProfileCareerFocusDirection.objects.abulk_create(
+        [
+            ProfileCareerFocusDirection(
+                profile=profile,
+                career_focus_direction_id=direction,
+            )
+            for direction in data['career_focus_direction_ids']
+        ],
+        ignore_conflicts=True,
+    )
     await ProfileAnswer.objects.abulk_create(
         [
             ProfileAnswer(profile=profile, answer_id=answer_id)
@@ -453,6 +495,7 @@ async def set_workday_type_handler(
 
     matched_user = await find_match(user)
     if not matched_user:
+        await state.clear()
         await query.message.edit_text(
             'Готово! Твой профиль в игре.\n\n'
             'Теперь моя очередь: '

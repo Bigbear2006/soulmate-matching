@@ -32,12 +32,6 @@ class Profile(models.Model):
         related_name='profiles',
         verbose_name='Департамент',
     )
-    career_focus_direction = models.ForeignKey(
-        'core.CareerFocusDirection',
-        on_delete=models.CASCADE,
-        related_name='profiles',
-        verbose_name='Направление',
-    )
     search_type = models.CharField(
         'Кого ищет',
         choices=SearchType,
@@ -103,6 +97,29 @@ class ProfileInterest(models.Model):
         return f'Выбранный интерес ({self.pk})'
 
 
+class ProfileCareerFocusDirection(models.Model):
+    profile = models.ForeignKey(
+        'core.Profile',
+        on_delete=models.CASCADE,
+        related_name='career_focus_directions',
+        verbose_name='Профиль',
+    )
+    career_focus_direction = models.ForeignKey(
+        'core.CareerFocusDirection',
+        on_delete=models.CASCADE,
+        related_name='profiles',
+        verbose_name='Направление',
+    )
+
+    class Meta:
+        unique_together = ('profile', 'career_focus_direction')
+        verbose_name = 'Направление'
+        verbose_name_plural = 'Направления'
+
+    def __str__(self) -> str:
+        return f'Направление ({self.pk})'
+
+
 class City(models.Model):
     name = models.CharField('Название', unique=True, max_length=255)
 
@@ -131,6 +148,7 @@ class Interest(models.Model):
         'Территория',
         choices=Territory,
         max_length=20,
+        blank=True,
     )
 
     class Meta:
@@ -147,6 +165,7 @@ class CareerFocusDirection(models.Model):
         'Базовое направление',
         choices=CareerFocus,
         max_length=20,
+        blank=True,
     )
 
     class Meta:

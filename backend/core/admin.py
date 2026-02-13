@@ -7,6 +7,7 @@ from core.models import (
     Match,
     Profile,
     ProfileAnswer,
+    ProfileCareerFocusDirection,
     ProfileInterest,
     ProfileLifestyle,
     Question,
@@ -49,6 +50,14 @@ class ProfileInterestInline(admin.TabularInline[ProfileInterest, Profile]):
     extra = 0
 
 
+class ProfileCareerFocusDirectionInline(
+    admin.TabularInline[ProfileCareerFocusDirection, Profile],
+):
+    model = ProfileCareerFocusDirection
+    readonly_fields = ('career_focus_direction',)
+    extra = 0
+
+
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin[Profile]):
     list_select_related = ('user',)
@@ -57,6 +66,7 @@ class ProfileAdmin(admin.ModelAdmin[Profile]):
         ProfileAnswerInline,
         ProfileLifestyleInline,
         ProfileInterestInline,
+        ProfileCareerFocusDirectionInline,
     )
     ordering = ('-created_at',)
     group = 'Основное'
