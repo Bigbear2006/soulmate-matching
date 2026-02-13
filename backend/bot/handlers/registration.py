@@ -496,7 +496,9 @@ async def set_workday_type_handler(
         ignore_conflicts=True,
     )
 
-    matched_user = await find_match(user)
+    # diable match finding for now
+    # matched_user = await find_match(user)
+    matched_user = None
     if not matched_user:
         await state.clear()
         await query.message.edit_text(
