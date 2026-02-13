@@ -295,7 +295,9 @@ async def interest_done_handler(
     data['current_territory'] = territory
     await state.set_data(data)
     await query.message.edit_text(
-        f'{Territory(territory).label}\nЧто из этого тебе ближе?\n\n',
+        f'{Territory(territory).label}\n'
+        f'{territory_descriptions[territory]}\n\n'
+        f'Что из этого тебе ближе?\n\n',
         reply_markup=await get_interests_kb(territory),
     )
 
