@@ -15,37 +15,35 @@ def create_questions_and_answers(apps: Apps, schema_editor: BaseDatabaseSchemaEd
 
     q1 = Question.objects.create(
         key='evening_movie',
-        text='Если бы твой вечер был фильмом, это было бы:',
-        bot_response='Выбери фильм, который лучше всего описывает твой вечер.'
+        text='Представь что твой вечер – это фильм…',
     )
     Answer.objects.bulk_create([
         Answer(
             question=q1,
-            text='Ирония судьбы, или С легким паром!',
+            text='«Ирония судьбы, или С легким паром!»: Вечером ты начинаешь ощущать себя Женей Лукашиным, мечтая случайно попасть в другой город и встретить свою судьбу.',
             bot_response='Романтичный сценарий. Похоже, ты веришь в совпадения. Это хороший знак для мэтча.'
         ),
         Answer(
             question=q1,
-            text='Операция Ы и другие приключения Шурика',
+            text='«Операция Ы и другие приключения Шурика»: У тебя вечный квест устроить идеальный вечер, полный забавных случайностей и творческих решений, вроде тех, которыми славится Шурик.',
             bot_response='Люблю людей, у которых вечер — это квест. С тобой точно не скучно.'
         ),
         Answer(
             question=q1,
-            text='Москва слезам не верит',
+            text='«Москва слезам не верит»: Как Гоша, вечером ты планируешь крутые дела и готовишься стать настоящим героем своей собственной истории.',
             bot_response='Амбициозный герой собственной истории. Уважительно.'
         ),
         Answer(
             question=q1,
-            text='Собачье сердце',
+            text='«Собачье сердце»: Когда приходит время готовить ужин, чувствуешь себя профессором Преображенским, пытающимся создать идеальное блюдо из остатков продуктов, найденных в холодильнике.',
             bot_response='Аналитик с кулинарным уклоном. Рациональность — сильная сторона.'
         ),
         Answer(
             question=q1,
-            text='Иван Васильевич меняет профессию',
+            text='«Иван Васильевич меняет профессию»: Тебе кажется, что времена вокруг тебя меняются, как сцены фильма Гайдая, и вот ты уже переносишься в разные эпохи за пару часов просмотра телевизора.',
             bot_response='Гибкость уровня «адаптируюсь к любой эпохе». Это редкость.'
         ),
     ])
-
 
     q2 = Question.objects.create(
         key='money_habits',
@@ -70,7 +68,7 @@ def create_questions_and_answers(apps: Apps, schema_editor: BaseDatabaseSchemaEd
         Answer(question=q3, text='Посоветую сериал/фильм, который тебя затянет', bot_response='Опасно. После твоих советов люди пропадают на выходные.'),
         Answer(question=q3, text='Могу объяснить сложную штуку простыми словами', bot_response='Прекрасно. Я бы сам с тобой подружился!'),
         Answer(question=q3, text='Подскажу идею для короткой поездки или перезагрузки', bot_response='С тобой жизнь заиграет новыми красками ;)'),
-        Answer(question=q3, text='Научу финансовой грамотности', bot_response='О, это серьезно! С тобой друзья точно не останутся с пустым кошельком в конце месяца!'),
+        Answer(question=q3, text='Могу научить финансовой грамотности', bot_response='О, это серьезно! С тобой друзья точно не останутся с пустым кошельком в конце месяца!'),
     ])
 
     q4 = Question.objects.create(
@@ -79,7 +77,7 @@ def create_questions_and_answers(apps: Apps, schema_editor: BaseDatabaseSchemaEd
         bot_response='Принял, я предупрежу твоего мэтча!'
     )
     Answer.objects.bulk_create([
-        Answer(question=q4, text='Текстовый философ (люблю подумать и написать)'),
+        Answer(question=q4, text='Текстовый философ (подумать и написать)'),
         Answer(question=q4, text='Голосовой импровизатор (быстро и по делу)'),
         Answer(question=q4, text='Коротко и ясно (ок, спс, погнали)'),
     ])
@@ -101,11 +99,11 @@ def create_questions_and_answers(apps: Apps, schema_editor: BaseDatabaseSchemaEd
         bot_response='Бот оценивает сильные стороны личности.'
     )
     Answer.objects.bulk_create([
-        Answer(question=q6, text='… умею поддержать', bot_response='Ты безопасное пространство. Это редкость.'),
-        Answer(question=q6, text='… могу зарядить энергией', bot_response='С тобой уровень батарейки растет.'),
-        Answer(question=q6, text='… умею объяснять сложное', bot_response='Ты переводчик с «заумного» на «человеческий».'),
-        Answer(question=q6, text='… всегда за движ и новые идеи', bot_response='Спокойных мэтчей тебе не подберу ;)'),
-        Answer(question=q6, text='… умею создавать уют и атмосферу', bot_response='С тобой разговоры не заканчиваются резко.'),
+        Answer(question=q6, text='Умею поддержать и выслушать', bot_response='Ты безопасное пространство. Это редкость.'),
+        Answer(question=q6, text='Могу зарядить энергией', bot_response='С тобой уровень батарейки растет.'),
+        Answer(question=q6, text='Умею объяснять сложное', bot_response='Ты переводчик с «заумного» на «человеческий».'),
+        Answer(question=q6, text='Всегда за движ и новые идеи', bot_response='Спокойных мэтчей тебе не подберу ;)'),
+        Answer(question=q6, text='Умею создавать уют и атмосферу', bot_response='С тобой разговоры не заканчиваются резко.'),
     ])
 
     q7 = Question.objects.create(
@@ -134,7 +132,7 @@ def create_questions_and_answers(apps: Apps, schema_editor: BaseDatabaseSchemaEd
     ])
 
 
-def create_default_objects(apps: Apps, schema_editor: BaseDatabaseSchemaEditor):
+def create_default_objects(apps: Apps, schema_editor: BaseDatabaseSchemaEditor) -> None:
     City = apps.get_model('core', 'City')
     Department = apps.get_model('core', 'Department')
     Interest = apps.get_model('core', 'Interest')

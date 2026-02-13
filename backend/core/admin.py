@@ -2,11 +2,14 @@ from django.contrib import admin
 from django.contrib.auth.models import Group
 
 from core.models import (
+    Answer,
     ContactsExchangeRequest,
     Match,
     Profile,
     ProfileAnswer,
-    User, ProfileLifestyle, Question, Answer,
+    ProfileLifestyle,
+    Question,
+    User,
 )
 
 admin.site.unregister(Group)
@@ -74,4 +77,4 @@ class QuestionAdmin(admin.ModelAdmin[Question]):
     exclude = ('key',)
     inlines = (AnswerInline,)
     ordering = ('order',)
-    group = 'Вопросы и ответы'
+    group = 'Вопросы'

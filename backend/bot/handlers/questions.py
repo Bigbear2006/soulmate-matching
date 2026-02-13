@@ -77,7 +77,7 @@ async def ask_match_type(query: CallbackQuery, state: FSMContext) -> None:
 async def ask_lifestyle(query: CallbackQuery, state: FSMContext) -> None:
     await state.set_state(RegistrationState.lifestyle)
     await query.message.edit_text(
-        f'Твой способ пережить сложный день — это скорее',
+        'Твой способ пережить сложный день — это скорее',
         reply_markup=get_lifestyles_kb(),
     )
 

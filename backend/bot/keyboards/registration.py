@@ -1,6 +1,7 @@
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from django.db.models import QuerySet
+from django.db.models import QuerySet, Window
+from django.db.models.functions import RowNumber
 
 from bot.callback_data import pack_action_data
 from bot.keyboards.utils import keyboard_from_choices, keyboard_from_queryset
@@ -35,8 +36,12 @@ async def get_cities_kb() -> InlineKeyboardMarkup:
 
 async def get_departments_kb() -> InlineKeyboardMarkup:
     return await keyboard_from_queryset(
-        Department.objects.all(),
+        Department.objects.annotate(
+            number=Window(expression=RowNumber(), order_by='id'),
+        ).all(),
         pack_action_data('department', 'select'),
+        str_func=lambda d: str(d.number),
+        width=2,
     )
 
 

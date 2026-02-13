@@ -45,6 +45,7 @@ class WorkdayType(TextChoices):
     OFFICE = 'office', 'В офисе (люблю деловой ритм и личные встречи)'
     DEPARTMENT = 'branch', 'В отделении (я там, где наши клиенты)'
     REMOTE = 'remote', 'На удаленке (люблю работать из дома)'
+    HYBRID = 'hybrid', 'Гибрид (я и там, и там)'
 
 
 class QuestionKey(TextChoices):
@@ -54,6 +55,7 @@ class QuestionKey(TextChoices):
     COMMUNICATION_STYLE = 'communication_style', 'Стиль общения'
     COMPANY_ROLE = 'company_role', 'Роль в компании'
     WHY_FUN_TO_BE_WITH = 'why_fun_to_be_with', 'Со мной классно, потому что'
+    INTERESTING_TO_TALK_WITH = 'interesting_to_talk_with'
     WHY_HERE = 'why_here', 'Здесь ради'
 
 

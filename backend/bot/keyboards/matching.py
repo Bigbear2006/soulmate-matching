@@ -4,7 +4,7 @@ start_matching_kb = InlineKeyboardMarkup(
     inline_keyboard=[
         [
             InlineKeyboardButton(
-                text='Начать поиск',
+                text='Начать',
                 callback_data='start_matching',
             ),
         ],

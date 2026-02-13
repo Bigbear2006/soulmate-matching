@@ -2,6 +2,8 @@ from aiogram import F, Router, flags
 from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
+from django.db.models import Window
+from django.db.models.functions import RowNumber
 
 from bot.callback_data import IntDetailActionCallback
 from bot.filters import action_filter
@@ -80,9 +82,8 @@ async def start_matching_handler(
 ) -> None:
     await state.set_state(RegistrationState.name)
     await query.message.edit_text(
-        'Напиши ваше имя или ник. '
-        'Его будут видеть пользователи, '
-        'с которыми у тебя будет мэтч',
+        'Напиши имя или ник, его будут видеть пользователи, '
+        'с которыми будет мэтч'
     )
 
 
@@ -108,6 +109,17 @@ async def set_gender_handler(query: CallbackQuery, state: FSMContext) -> None:
     )
 
 
+async def _get_departments_text() -> str:
+    return '\n'.join(
+        [
+            f'{d.number}. {d}'
+            async for d in Department.objects.annotate(
+                number=Window(expression=RowNumber(), order_by='id'),
+            ).all()
+        ],
+    )
+
+
 @router.callback_query(
     action_filter('city', 'select', detail=True),
     StateFilter(RegistrationState.city),
@@ -120,9 +132,10 @@ async def set_city_query_handler(
     city = await City.objects.aget(pk=callback_data.pk)
     await state.update_data(city_id=city.pk)
     await state.set_state(RegistrationState.department)
+    departments_text = await _get_departments_text()
     await query.message.edit_text(
         'География важна. Иногда мэтч начинается с «пойдём за кофе».\n\n'
-        'Из какого ты департамента?',
+        f'Из какого ты департамента?\n\n{departments_text}',
         reply_markup=await get_departments_kb(),
     )
 
@@ -132,9 +145,10 @@ async def set_city_message_handler(msg: Message, state: FSMContext) -> None:
     city, _ = await City.objects.aget_or_create(name=msg.text)
     await state.update_data(city_id=city.pk)
     await state.set_state(RegistrationState.department)
+    departments_text = await _get_departments_text()
     await msg.answer(
         'География важна. Иногда мэтч начинается с «пойдём за кофе».\n\n'
-        'Из какого ты департамента?',
+        f'Из какого ты департамента?\n\n{departments_text}',
         reply_markup=await get_departments_kb(),
     )
 
@@ -296,6 +310,7 @@ async def set_career_focus_direction_handler(
             QuestionKey.SHARE_SKILL_CARD,
             QuestionKey.COMPANY_ROLE,
             QuestionKey.WHY_FUN_TO_BE_WITH,
+            QuestionKey.INTERESTING_TO_TALK_WITH,
             QuestionKey.WHY_HERE,
         ],
     )
