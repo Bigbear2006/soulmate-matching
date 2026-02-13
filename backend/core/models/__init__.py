@@ -8,7 +8,7 @@ from core.models.profile import (
     Profile,
     ProfileLifestyle,
 )
-from core.models.question import Answer, Question, UserAnswer
+from core.models.question import Answer, ProfileAnswer, Question
 from core.models.user import User, WebUser
 
 __all__ = (
@@ -20,9 +20,9 @@ __all__ = (
     'Interest',
     'Match',
     'Profile',
+    'ProfileAnswer',
     'ProfileLifestyle',
     'Question',
     'User',
-    'UserAnswer',
     'WebUser',
 )

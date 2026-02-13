@@ -1,7 +1,13 @@
 from django.contrib import admin
 from django.contrib.auth.models import Group
 
-from core.models import ContactsExchangeRequest, Match, Profile, User
+from core.models import (
+    ContactsExchangeRequest,
+    Match,
+    Profile,
+    ProfileAnswer,
+    User, ProfileLifestyle,
+)
 
 admin.site.unregister(Group)
 
@@ -19,13 +25,23 @@ class MatchAdmin(admin.ModelAdmin[Match]):
     ordering = ('-created_at',)
 
 
+class ProfileAnswerInline(admin.TabularInline[ProfileAnswer, Profile]):
+    model = ProfileAnswer
+    readonly_fields = ('answer',)
+    extra = 0
+
+
+class ProfileLifestyleInline(admin.TabularInline[ProfileLifestyle, Profile]):
+    model = ProfileLifestyle
+    readonly_fields = ('lifestyle',)
+    extra = 0
+
+
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin[Profile]):
     list_select_related = ('user',)
-    readonly_fields = (
-        'user',
-        'created_at',
-    )
+    readonly_fields = ('user', 'created_at')
+    inlines = (ProfileAnswerInline, ProfileLifestyleInline)
     ordering = ('-created_at',)
 
 

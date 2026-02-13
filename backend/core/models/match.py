@@ -1,7 +1,7 @@
 from django.db import models
 
 from core.choices import MatchStatus
-from core.managers.match import MatchManager
+from core.managers import MatchManager
 
 
 class Match(models.Model):
@@ -47,4 +47,4 @@ class Match(models.Model):
         ]
 
     def __str__(self) -> str:
-        return f'Mэтч ({self.pk}'
+        return f'Mэтч ({self.pk})'

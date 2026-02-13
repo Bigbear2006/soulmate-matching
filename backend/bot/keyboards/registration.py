@@ -6,7 +6,6 @@ from bot.callback_data import pack_action_data
 from bot.keyboards.utils import keyboard_from_choices, keyboard_from_queryset
 from core.choices import (
     CareerFocus,
-    EveningMovie,
     Gender,
     Lifestyle,
     MatchType,
@@ -41,17 +40,14 @@ async def get_departments_kb() -> InlineKeyboardMarkup:
     )
 
 
-def get_evening_movies_kb() -> InlineKeyboardMarkup:
-    return keyboard_from_choices(EveningMovie, prefix='evening_movie')
-
-
 def get_lifestyles_kb() -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder.from_markup(
         keyboard_from_choices(Lifestyle, prefix='lifestyle'),
     )
-    return kb.row(
+    kb.row(
         InlineKeyboardButton(text='Готово', callback_data='lifestyle:done'),
-    ).as_markup()
+    )
+    return kb.as_markup()
 
 
 def get_territories_kb() -> InlineKeyboardMarkup:

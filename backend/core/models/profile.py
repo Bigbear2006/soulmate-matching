@@ -17,6 +17,7 @@ class Profile(models.Model):
         on_delete=models.CASCADE,
         related_name='profile',
         primary_key=True,
+        verbose_name='Пользователь',
     )
     name = models.CharField('Как обращаться', max_length=128)
     gender = models.CharField('Пол', choices=Gender, max_length=20)
@@ -24,21 +25,25 @@ class Profile(models.Model):
         'core.City',
         on_delete=models.CASCADE,
         related_name='profiles',
+        verbose_name='Город',
     )
     department = models.ForeignKey(
         'core.Department',
         on_delete=models.CASCADE,
         related_name='profiles',
+        verbose_name='Департамент',
     )
     interest = models.ForeignKey(
         'core.Interest',
         on_delete=models.CASCADE,
         related_name='profiles',
+        verbose_name='Интерес',
     )
     career_focus_direction = models.ForeignKey(
         'core.CareerFocusDirection',
         on_delete=models.CASCADE,
         related_name='profiles',
+        verbose_name='Направление',
     )
     search_type = models.CharField(
         'Кого ищет',
@@ -46,10 +51,12 @@ class Profile(models.Model):
         max_length=20,
     )
     match_type = models.CharField(
+        'Идеальный мэтч',
         choices=MatchType,
         max_length=20,
     )
     workday_type = models.CharField(
+        'Тип рабочего дня',
         choices=WorkdayType,
         max_length=20,
     )
@@ -64,11 +71,25 @@ class Profile(models.Model):
 
 
 class ProfileLifestyle(models.Model):
-    profile = models.ForeignKey('core.Profile', on_delete=models.CASCADE)
-    lifestyle = models.CharField(choices=Lifestyle, max_length=20)
+    profile = models.ForeignKey(
+        'core.Profile',
+        on_delete=models.CASCADE,
+        related_name='lifestyles',
+        verbose_name='Профиль',
+    )
+    lifestyle = models.CharField(
+        'Способ пережить сложный день',
+        choices=Lifestyle,
+        max_length=20,
+    )
 
     class Meta:
         unique_together = ('profile', 'lifestyle')
+        verbose_name = 'Способ пережить сложный день'
+        verbose_name_plural = 'Способы пережить сложный день'
+
+    def __str__(self) -> str:
+        return f'Способ пережить сложный день ({self.pk})'
 
 
 class City(models.Model):

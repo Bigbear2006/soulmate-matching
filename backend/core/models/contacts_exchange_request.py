@@ -1,9 +1,7 @@
 from django.db import models
 
 from core.choices import ExchangeStatus
-from core.managers.contacts_exchange_request import (
-    ContactsExchangeRequestManager,
-)
+from core.managers import ContactsExchangeRequestManager
 
 
 class ContactsExchangeRequest(models.Model):

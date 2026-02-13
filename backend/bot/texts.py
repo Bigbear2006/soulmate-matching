@@ -1,4 +1,4 @@
-from core.choices import CareerFocus, EveningMovie, Lifestyle, Territory
+from core.choices import CareerFocus, Lifestyle, Territory
 
 evening_movies_text = (
     'Если бы твой вечер был фильмом, это было бы:\n'
@@ -19,26 +19,6 @@ evening_movies_text = (
     'вокруг тебя меняются, как сцены фильма Гайдая, и вот ты уже '
     'переносишься в разные эпохи за пару часов просмотра телевизора.'
 )
-
-evening_movie_bot_answers: dict[str, str] = {
-    EveningMovie.IRONY: (
-        'Романтичный сценарий. Похоже, ты веришь в совпадения. '
-        'Это хороший знак для мэтча.'
-    ),
-    EveningMovie.OPERATION_Y: (
-        'Люблю людей, у которых вечер — это квест. С тобой точно не скучно.'
-    ),
-    EveningMovie.MOSCOW: (
-        'Амбициозный герой собственной истории. Уважительно.'
-    ),
-    EveningMovie.DOG_HEART: (
-        'Аналитик с кулинарным уклоном. Рациональность — сильная сторона.'
-    ),
-    EveningMovie.IVAN: (
-        'Гибкость уровня «адаптируюсь к любой эпохе». Это редкость.'
-    ),
-}
-
 
 lifestyles_bot_answers = {
     frozenset([Lifestyle.TALK]): (

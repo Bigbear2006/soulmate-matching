@@ -3,9 +3,10 @@ from dataclasses import dataclass
 from django.db.models import Count, F, Q
 
 from core.choices import MatchStatus
-from core.models import Match, User
+from core.models import Match, ProfileAnswer, User
 
 MAX_MATCHES_COUNT = 3
+MIN_MATCHED_ANSWERS_PERCENTAGE = 80
 
 
 @dataclass
@@ -14,10 +15,18 @@ class Soulmate:
     match: Match
     thread_id: int
 
+    def __str__(self) -> str:
+        return self.user.profile.name
+
 
 async def find_match(user: User) -> User | None:
     matched_user = (
-        await User.objects.annotate(
+        await User.objects.filter(
+            ~Q(pk=user.pk),
+            profile__isnull=False,
+            profile__answers__isnull=False,
+        )
+        .annotate(
             initiated_matches_count=Count(
                 'initiated_matches',
                 filter=Q(initiated_matches__status=MatchStatus.ACTIVE),
@@ -28,25 +37,24 @@ async def find_match(user: User) -> User | None:
             ),
             total_matches_count=F('initiated_matches_count')
             + F('received_matches_count'),
-            # answers_count=Count('user__profile__answers'),
-            # matched_answers_count=Count(
-            #     'user__profile__answers',
-            #     filter=Q(
-            #         profile__answers__answer_id__in=UserAnswer.objects.filter(
-            #             profile__user=user,
-            #         ).values_list('answer_id', flat=True),
-            #     ),
-            # ),
-            # matched_answers_percentage=F('matched_answers_count')
-            # / F('answers_count'),
+            answers_count=Count('profile__answers'),
+            matched_answers_count=Count(
+                'profile__answers',
+                filter=Q(
+                    profile__answers__answer_id__in=ProfileAnswer.objects.filter(
+                        profile__user=user,
+                    ).values_list('answer_id', flat=True),
+                ),
+            ),
+            matched_answers_percentage=F('matched_answers_count')
+            / F('answers_count'),
         )
         .filter(
-            ~Q(pk=user.pk),
             total_matches_count__lte=MAX_MATCHES_COUNT,
-            profile__isnull=False,
-            # matched_answers_percentage__gte=80,
+            # disable for now
+            # matched_answers_percentage__gte=MIN_MATCHED_ANSWERS_PERCENTAGE,
         )
-        .order_by('total_matches_count')
+        .order_by('-matched_answers_percentage', 'total_matches_count')
         .afirst()
     )
     return matched_user

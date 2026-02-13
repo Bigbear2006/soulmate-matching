@@ -10,15 +10,32 @@ async def main() -> None:
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
     django.setup()
 
-    from bot.handlers import conversation, exchange_contacts, registration
-    from bot.middlewares import UserMiddleware, setup_middlewares
+    from bot.handlers import (
+        close_match,
+        conversation,
+        exchange_contacts,
+        questions,
+        registration,
+    )
+    from bot.middlewares import (
+        MessageThreadMiddleware,
+        UserMiddleware,
+        setup_middlewares,
+    )
 
     dp.include_routers(
         registration.router,
+        questions.router,
         exchange_contacts.router,
+        close_match.router,
         conversation.router,
     )
     setup_middlewares(dp, UserMiddleware())
+    setup_middlewares(
+        dp,
+        MessageThreadMiddleware(),
+        include_events={'message'},
+    )
 
     await bot.delete_webhook(drop_pending_updates=True)
     await bot.set_my_commands(
@@ -28,6 +45,7 @@ async def main() -> None:
                 command='/exchange_contacts',
                 description='Обменяться контактами',
             ),
+            BotCommand(command='/close_match', description='Завершить диалог'),
         ],
     )
 

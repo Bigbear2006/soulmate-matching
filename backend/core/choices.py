@@ -6,14 +6,6 @@ class Gender(TextChoices):
     FEMALE = 'female', 'Женский'
 
 
-class EveningMovie(TextChoices):
-    IRONY = 'irony', 'Ирония судьбы, или С лёгким паром!'
-    OPERATION_Y = 'operation_y', 'Операция Ы и другие приключения Шурика'
-    MOSCOW = 'moscow', 'Москва слезам не верит'
-    DOG_HEART = 'dog_heart', 'Собачье сердце'
-    IVAN = 'ivan', 'Иван Васильевич меняет профессию'
-
-
 class Lifestyle(TextChoices):
     TALK = 'talk', 'Мне важно выговориться'
     DISTRACT = (
@@ -53,6 +45,16 @@ class WorkdayType(TextChoices):
     OFFICE = 'office', 'В офисе (люблю деловой ритм и личные встречи)'
     DEPARTMENT = 'branch', 'В отделении (я там, где наши клиенты)'
     REMOTE = 'remote', 'На удаленке (люблю работать из дома)'
+
+
+class QuestionKey(TextChoices):
+    EVENING_MOVIE = 'evening_movie', 'Если бы твой вечер был фильмом'
+    MONEY_HABITS = 'money_habits', 'Про тебя сейчас скорее так'
+    SHARE_SKILL_CARD = 'share_skill_card', 'Карта, которой ты готов поделиться'
+    COMMUNICATION_STYLE = 'communication_style', 'Стиль общения'
+    COMPANY_ROLE = 'company_role', 'Роль в компании'
+    WHY_FUN_TO_BE_WITH = 'why_fun_to_be_with', 'Со мной классно, потому что'
+    WHY_HERE = 'why_here', 'Здесь ради'
 
 
 class MatchStatus(TextChoices):
