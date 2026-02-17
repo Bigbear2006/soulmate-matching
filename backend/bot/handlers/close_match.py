@@ -3,7 +3,7 @@ from aiogram.filters import Command
 from aiogram.types import CallbackQuery, Message
 
 from bot.keyboards.close_match import confirm_close_match_kb
-from bot.services.matching import get_soulmate
+from bot.services.match import get_soulmate
 from bot.types import expect
 from core.models import Match, User
 

@@ -19,7 +19,8 @@ from bot.keyboards.registration import (
     get_yes_no_kb,
 )
 from bot.loader import logger
-from bot.services.matching import find_match
+from bot.services.match import create_match, find_matched_user
+from bot.services.profile import create_profile
 from bot.states import RegistrationState
 from bot.texts import lifestyles_bot_answers, territory_descriptions
 from bot.types import expect
@@ -29,12 +30,7 @@ from core.models import (
     City,
     Department,
     Interest,
-    Match,
     Profile,
-    ProfileAnswer,
-    ProfileCareerFocusDirection,
-    ProfileInterest,
-    ProfileLifestyle,
     Question,
     User,
 )
@@ -453,51 +449,22 @@ async def set_workday_type_handler(
     workday_type = query.data.split(':')[1]
     data = await state.get_data()
 
-    profile, _ = await Profile.objects.aupdate_or_create(
-        {
-            'name': data['name'],
-            'gender': data['gender'],
-            'city_id': data['city_id'],
-            'department_id': data['department_id'],
-            'search_type': data['search_type'],
-            'workday_type': workday_type,
-        },
-        user=user,
-    )
-    await ProfileLifestyle.objects.abulk_create(
-        [
-            ProfileLifestyle(profile=profile, lifestyle=lifestyle)
-            for lifestyle in data['lifestyles']
-        ],
-        ignore_conflicts=True,
-    )
-    await ProfileInterest.objects.abulk_create(
-        [
-            ProfileInterest(profile=profile, interest_id=interest)
-            for interest in data['interests_ids']
-        ],
-        ignore_conflicts=True,
-    )
-    await ProfileCareerFocusDirection.objects.abulk_create(
-        [
-            ProfileCareerFocusDirection(
-                profile=profile,
-                career_focus_direction_id=direction,
-            )
-            for direction in data['career_focus_direction_ids']
-        ],
-        ignore_conflicts=True,
-    )
-    await ProfileAnswer.objects.abulk_create(
-        [
-            ProfileAnswer(profile=profile, answer_id=answer_id)
-            for answer_id in data['answers_ids']
-        ],
-        ignore_conflicts=True,
+    await create_profile(
+        user,
+        name=data['name'],
+        gender=data['gender'],
+        city_id=data['city_id'],
+        department_id=data['department_id'],
+        search_type=data['search_type'],
+        workday_type=workday_type,
+        lifestyles=data['lifestyles'],
+        interests_ids=data['interests_ids'],
+        career_focus_direction_ids=data['career_focus_direction_ids'],
+        answers_ids=data['answers_ids'],
     )
 
     # diable match finding for now
-    # matched_user = await find_match(user)
+    matched_user = await find_matched_user(user)
     matched_user = None
     if not matched_user:
         await state.clear()
@@ -511,21 +478,7 @@ async def set_workday_type_handler(
         )
         return
 
-    initiator_topic = await query.bot.create_forum_topic(
-        query.message.chat.id,
-        name=matched_user.profile.name,
-    )
-    recipient_topic = await query.bot.create_forum_topic(
-        matched_user.id,
-        name=user.profile.name,
-    )
-    await Match.objects.acreate(
-        initiator=user,
-        initiator_thread_id=initiator_topic.message_thread_id,
-        recipient=matched_user,
-        recipient_thread_id=recipient_topic.message_thread_id,
-    )
-
+    await create_match(user, matched_user)
     await state.clear()
     await query.message.edit_text(
         'Готово! Твой профиль в игре.\n\n'

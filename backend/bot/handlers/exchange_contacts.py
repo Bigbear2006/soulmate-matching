@@ -8,7 +8,7 @@ from bot.keyboards.exchange_contacts import (
     accept_exchange_contacts_request_kb,
     confirm_exchange_contacts_kb,
 )
-from bot.services.matching import get_soulmate
+from bot.services.match import get_soulmate
 from bot.types import expect
 from core.models import ContactsExchangeRequest, User
 

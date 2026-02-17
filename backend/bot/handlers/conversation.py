@@ -2,7 +2,7 @@ from aiogram import F, Router, flags
 from aiogram.types import Message
 from django.core.exceptions import ObjectDoesNotExist
 
-from bot.services.matching import get_soulmate
+from bot.services.match import get_soulmate
 
 router = Router()
 
