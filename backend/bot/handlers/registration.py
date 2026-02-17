@@ -458,9 +458,9 @@ async def set_workday_type_handler(
         search_type=data['search_type'],
         workday_type=workday_type,
         lifestyles=data['lifestyles'],
-        interests_ids=data['interests_ids'],
-        career_focus_direction_ids=data['career_focus_direction_ids'],
-        answers_ids=data['answers_ids'],
+        interests_ids=data.get('interests_ids', []),
+        career_focus_direction_ids=data.get('career_focus_direction_ids', []),
+        answers_ids=data.get('answers_ids', []),
     )
 
     # diable match finding for now
