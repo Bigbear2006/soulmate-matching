@@ -140,15 +140,16 @@ async def find_all_matches() -> dict[int, dict[str, Any]]:
 
     async for user in User.objects.all():
         matched_user = await find_matched_user(user)
+        if not matched_user:
+            continue
         matches_info[user.pk] = {
             field_name: value
             for field_name in matches_info_fields
-            if (value := getattr(user, field_name))
+            if (value := getattr(user, field_name, None))
         }
         matches_info[user.pk]['matched_user_id'] = matched_user.pk
         # do not create matches for now
-        # if matched_user:
-        #     await create_match(user, matched_user)
+        # await create_match(user, matched_user)
 
     return matches_info
 
