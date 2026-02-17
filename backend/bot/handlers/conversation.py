@@ -11,6 +11,9 @@ router = Router()
 @router.message(F)
 @flags.thread
 async def forward_message_handler(msg: Message, thread_id: int) -> None:
+    if msg.forum_topic_created:
+        return
+
     try:
         soulmate = await get_soulmate(thread_id)
     except ObjectDoesNotExist:
