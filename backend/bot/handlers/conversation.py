@@ -1,5 +1,3 @@
-import contextlib
-
 from aiogram import F, Router, flags
 from aiogram.types import Message
 from django.core.exceptions import ObjectDoesNotExist
